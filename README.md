@@ -1,2 +1,2 @@
 # java-web-server
-Raw HTTP web server built using Java sockets. Listens for connections and parses HTTP requests and serves a HTML file.
+A HTTP web server built from scratch using Java sockets. The server listens for incoming TCP connections, parses HTTP requests, and responds with a HTML file.

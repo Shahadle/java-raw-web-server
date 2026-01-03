@@ -30,44 +30,40 @@ public class WebServer {
                               String requestLine = reader.readLine();
                               System.out.println("Request: " + requestLine);
 
+                              if (requestLine == null || requestLine.isBlank()) {
+                                    continue;
+                              }
+
                               String[] parts = requestLine.split(" ");
                               // HTTP Method
                               String method = parts[0];
                               // Requested path
                               String path = parts[1];
 
-                              String httpBody;
-                              int status = 200;
-                              String statusText = "OK";
+                              HttpResponse response;
 
                               if(!method.equals("GET")) {
-                                    status = 405;
-                                    statusText = "Method Not Allowed";
-                                    httpBody = "<h1>405 Method Not Allowed</h1>";
+                                    response = HttpResponse.methodNotAllowedHtml("<h1>405 Method Not Allowed</h1>");
                               }else {
-                                    Path filePath = Path.of("home.html");
-
-                                    if (Files.exists(filePath)) {
-                                          httpBody = Files.readString(filePath, StandardCharsets.UTF_8);
-                                    } else {
-                                          status = 404;
-                                          statusText = "Not Found";
-                                          httpBody = "<h1>404 Not Found</h1>";
+                                    if (!path.equals("/")) {
+                                          response = HttpResponse.notFoundHtml("<h1>404 Not Found</h1>");
+                                    }else {
+                                          Path filePath = Path.of("home.html");
+                                          if (Files.exists(filePath)) {
+                                                String htmlPage = Files.readString(filePath, StandardCharsets.UTF_8);
+                                                response = HttpResponse.okHtml(htmlPage);
+                                          } else {
+                                                response = HttpResponse.notFoundHtml("<h1>404 Not Found</h1>");
+                                          }
                                     }
                               }
 
-                              byte[] bodyBytes = httpBody.getBytes(StandardCharsets.UTF_8);
-
-                              String headers =
-                                    "HTTP/1.1 " + status + " " + statusText + "\r\n" +
-                                    "Content-Type: text/html; charset=utf-8\r\n" +
-                                    "Content-Length: " + bodyBytes.length + "\r\n" +
-                                    "Connection: close\r\n" +
-                                    "\r\n";
-
-                              out.write(headers.getBytes(StandardCharsets.UTF_8));
-                              out.write(bodyBytes);
-                              out.flush();
+                              try {
+                                    response.writeTo(out);
+                                    out.flush();
+                              } catch (java.net.SocketException e) {
+                                    System.out.println("Client aborted connection: " + e.getMessage());
+                              }
                         }
                   }
             }
